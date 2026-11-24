@@ -14,11 +14,27 @@ PureTV opens right away. Afterwards it's on the Roku home screen as a dev app.
 
 - Left / Right: move between tiles. OK: open. Back: go back (or exit at Home).
 - Settings: Appearance (Midnight / Graphite) and Motion (Standard / Reduced) are saved on the TV.
-- Streaming apps (Netflix, YouTube…): press Home on the remote. Roku does not let other apps launch them.
+- **TV apps** tile: a grid of streaming apps (Netflix, YouTube, Prime Video…). OK opens the app; Back on the remote returns to PureTV. Edit the list in `streamingApps()` in `roku/components/MainScene.brs`; `tools/tv.sh apps` shows the ids installed on your TV.
 
 ## Remove or roll back
 
 Open `http://<roku-ip>` again and click **Delete**, or upload an older zip.
+
+## Let Claude control the TV
+
+The cloud can't reach your home Wi-Fi, so this runs on the Chromebook (or anything on the same Wi-Fi as the TV):
+
+    export ROKU_IP=192.168.x.x          # from the TV's developer screen
+    export ROKU_DEV_PASSWORD=...        # type it yourself, never paste it in chat
+    tools/tv.sh install                 # upload dist/PureTV.zip
+    tools/tv.sh open                    # open PureTV
+    tools/tv.sh key Right               # press a remote button
+    tools/tv.sh launch 12               # open Netflix
+    tools/tv.sh apps                    # list installed apps and ids
+
+## Credits
+
+App launching is adapted from [CleanYourRoku](https://github.com/UXDreamer/CleanYourRoku) by Damien Pressley (MIT, see `LICENSES/`).
 
 ## Build
 

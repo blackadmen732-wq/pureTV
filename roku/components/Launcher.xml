@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Opens an installed Roku app by its id. Adapted from CleanYourRoku (MIT, see LICENSES/CleanYourRoku-MIT.txt). -->
+<component name="Launcher" extends="Task">
+  <interface>
+    <field id="appId" type="string" />
+  </interface>
+  <script type="text/brightscript"><![CDATA[
+sub init()
+    m.top.functionName = "go"
+end sub
+
+sub go()
+    CreateObject("roAppManager").LaunchApp(m.top.appId, "", {})
+end sub
+  ]]></script>
+</component>

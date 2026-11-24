@@ -20,8 +20,16 @@ function favorites() as object
         { label: "Movies", action: "library", hint: "Your own movies" },
         { label: "Music", action: "library", hint: "Your own music" },
         { label: "Photos", action: "library", hint: "Your own photos" },
-        { label: "TV apps", action: "apps", hint: "Netflix, YouTube and the rest" },
+        { label: "TV apps", action: "apps", hint: "Open Netflix, YouTube and more" },
         { label: "Settings", action: "settings", hint: "Theme, motion and device" }
+    ]
+end function
+
+' Streaming apps the TV apps page can open. Ids come from Roku; edit the list to match your TV.
+function streamingApps() as object
+    return [
+        ["YouTube", "837"], ["Netflix", "12"], ["Prime Video", "13"], ["Hulu", "2285"], ["Peacock", "593099"],
+        ["Pluto TV", "74519"], ["Tubi", "41468"], ["Plex", "13535"], ["ESPN", "34376"], ["Media Player", "2213"]
     ]
 end function
 
@@ -35,7 +43,8 @@ sub init()
     m.screen = "home"
     m.focus = 0
     m.row = 0
-    m.isAnimating = false
+    m.appIndex = 0
+    m.launcher = CreateObject("roSGNode", "Launcher")
 
     buildTiles()
     m.clockTimer = m.top.findNode("clockTimer")
@@ -207,8 +216,9 @@ sub showPage(kind as string)
         body = "No personal media added yet." + Chr(10) + Chr(10) + "Movies, Music and Photos will show here once you add your own files."
     else if kind = "apps"
         title = "TV apps"
-        sub_ = "Netflix, YouTube and your other apps"
-        body = "Press the Home button on your Roku remote to open your streaming apps." + Chr(10) + Chr(10) + "Roku does not let other apps launch them, so PureTV sends you to the Roku home instead of showing a fake button."
+        sub_ = "Pick an app. Back on the remote returns here."
+        hint = "OK  Open     •     Back  Return"
+        buildAppGrid()
     else if kind = "help"
         title = "Help"
         sub_ = "How PureTV works"
@@ -223,7 +233,7 @@ sub showPage(kind as string)
     m.top.findNode("pageTitle").text = title
     m.top.findNode("pageSub").text = sub_
     m.top.findNode("pageBody").text = body
-    m.top.findNode("pageBody").visible = (kind <> "settings")
+    m.top.findNode("pageBody").visible = (kind <> "settings" and kind <> "apps")
     m.top.findNode("pageHint").text = hint
     updateTabs()
 end sub
@@ -293,6 +303,39 @@ sub activateRow()
     end if
 end sub
 
+sub buildAppGrid()
+    rows = m.top.findNode("rows")
+    rows.removeChildrenIndex(rows.getChildCount(), 0)
+    apps = streamingApps()
+    for i = 0 to apps.Count() - 1
+        g = rows.createChild("Group")
+        g.translation = [352 * (i mod 5), 40 + 232 * Int(i / 5)]
+        ring = g.createChild("Poster")
+        ring.uri = "pkg:/images/tile_ring.png"
+        ring.width = 348
+        ring.height = 208
+        ring.translation = [-8, -8]
+        ring.blendColor = m.t.focus
+        ring.visible = (i = m.appIndex)
+        face = g.createChild("Poster")
+        face.uri = "pkg:/images/tile.png"
+        face.width = 332
+        face.height = 192
+        if i = m.appIndex then face.blendColor = m.t.selected else face.blendColor = m.t.surface
+        lbl = rowLabel(apps[i][0], 28, m.t.text, "font:BoldSystemFontFile")
+        lbl.translation = [28, 76]
+        g.appendChild(lbl)
+    end for
+end sub
+
+sub moveApp(delta as integer)
+    nextIndex = m.appIndex + delta
+    if nextIndex < 0 or nextIndex >= streamingApps().Count() then return
+    if (delta = 1 or delta = -1) and Int(nextIndex / 5) <> Int(m.appIndex / 5) then return ' stay in the row
+    m.appIndex = nextIndex
+    buildAppGrid()
+end sub
+
 ' ---------- remote ----------
 
 function onKeyEvent(key as string, press as boolean) as boolean
@@ -324,6 +367,19 @@ function onKeyEvent(key as string, press as boolean) as boolean
             return true
         else if key = "OK"
             activateRow()
+            return true
+        end if
+    end if
+
+    if m.page = "apps"
+        moves = { left: -1, right: 1, up: -5, down: 5 }
+        if moves.DoesExist(key)
+            moveApp(moves[key])
+            return true
+        else if key = "OK"
+            m.launcher.appId = streamingApps()[m.appIndex][1]
+            m.launcher.control = "STOP"
+            m.launcher.control = "RUN"
             return true
         end if
     end if
