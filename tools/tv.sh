@@ -8,6 +8,7 @@
 #   tools/tv.sh launch 12                 # open an app by id (12 = Netflix)
 #   tools/tv.sh apps                      # list installed apps and their ids
 #   tools/tv.sh logos                     # save app logos for the tiles, then run tools/build.sh
+#   tools/tv.sh screenshot                # save what PureTV shows on the TV to tv-preview.jpg
 set -euo pipefail
 : "${ROKU_IP:?set ROKU_IP to the TV IP address}"
 ecp="http://$ROKU_IP:8060"
@@ -23,5 +24,12 @@ case "${1:-}" in
            for id in $(curl -sS "$ecp/query/apps" | grep -o 'app id="[0-9]*"' | grep -o '[0-9]*'); do
              curl -sS -o "$dir/app_$id.png" "$ecp/query/icon/$id" && echo "saved app_$id.png"
            done ;;
-  *)       sed -n '2,11p' "$0"; exit 1 ;;
+  screenshot)
+           auth=(--digest -u "rokudev:${ROKU_DEV_PASSWORD:?set ROKU_DEV_PASSWORD}")
+           # Roku's dev page can only capture the sideloaded app (PureTV), not other apps.
+           img=$(curl -sS "${auth[@]}" -F mysubmit=Screenshot -F archive= -F passwd= \
+                   "http://$ROKU_IP/plugin_inspect" | grep -o 'pkgs/dev\.[a-z]*' | head -1)
+           [ -n "$img" ] || { echo "No screenshot: is PureTV open on the TV?"; exit 1; }
+           curl -sS "${auth[@]}" -o tv-preview.jpg "http://$ROKU_IP/$img" && echo "saved tv-preview.jpg" ;;
+  *)       sed -n '2,12p' "$0"; exit 1 ;;
 esac
