@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="MainScene" extends="Scene">
+  <script type="text/brightscript" uri="MainScene.brs" />
+  <children>
+    <Rectangle id="bg" width="1920" height="1080" />
+
+    <!-- Header -->
+    <Label id="wordmark" text="puretv" translation="[90,78]">
+      <Font role="font" uri="font:BoldSystemFontFile" size="40" />
+    </Label>
+    <Label id="tabHome" text="Home" translation="[800,84]">
+      <Font role="font" uri="font:SystemFontFile" size="30" />
+    </Label>
+    <Label id="tabLibrary" text="Library" translation="[910,84]">
+      <Font role="font" uri="font:SystemFontFile" size="30" />
+    </Label>
+    <Label id="tabSettings" text="Settings" translation="[1040,84]">
+      <Font role="font" uri="font:SystemFontFile" size="30" />
+    </Label>
+    <Label id="clock" horizAlign="right" width="300" translation="[1530,84]">
+      <Font role="font" uri="font:SystemFontFile" size="30" />
+    </Label>
+    <Timer id="clockTimer" repeat="true" duration="15" />
+
+    <!-- Home -->
+    <Group id="home">
+      <Label id="heroTitle" text="Your evening." translation="[90,240]">
+        <Font role="font" uri="font:BoldSystemFontFile" size="72" />
+      </Label>
+      <Label id="heroSub" text="Everything you choose. Nothing you don't." translation="[90,340]">
+        <Font role="font" uri="font:SystemFontFile" size="28" />
+      </Label>
+      <Label id="favHeading" text="Favorites" translation="[90,536]">
+        <Font role="font" uri="font:BoldSystemFontFile" size="38" />
+      </Label>
+      <Group id="tiles" />
+      <Label id="focusLabel" translation="[90,840]">
+        <Font role="font" uri="font:BoldSystemFontFile" size="42" />
+      </Label>
+      <Label id="homeHint" text="OK  Open     •     Back  Exit" translation="[90,906]">
+        <Font role="font" uri="font:SystemFontFile" size="28" />
+      </Label>
+    </Group>
+
+    <!-- Library, Settings, Help and info pages share one layout -->
+    <Group id="page" visible="false">
+      <Label id="pageTitle" translation="[90,200]">
+        <Font role="font" uri="font:BoldSystemFontFile" size="56" />
+      </Label>
+      <Label id="pageSub" translation="[90,280]">
+        <Font role="font" uri="font:SystemFontFile" size="28" />
+      </Label>
+      <Group id="rows" translation="[90,350]" />
+      <Label id="pageBody" translation="[90,360]" width="1500" wrap="true" lineSpacing="12">
+        <Font role="font" uri="font:SystemFontFile" size="32" />
+      </Label>
+      <Label id="pageHint" translation="[90,960]">
+        <Font role="font" uri="font:SystemFontFile" size="28" />
+      </Label>
+    </Group>
+  </children>
+</component>
