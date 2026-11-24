@@ -18,7 +18,7 @@ end function
 function favorites() as object
     return [
         { label: "Movies", action: "library", hint: "Your own movies" },
-        { label: "Music", action: "library", hint: "Your own music" },
+        { label: "Music", action: "music", hint: "Spotify, Pandora and radio" },
         { label: "Photos", action: "library", hint: "Your own photos" },
         { label: "TV apps", action: "apps", hint: "Open Netflix, YouTube and more" },
         { label: "Settings", action: "settings", hint: "Theme, motion and device" }
@@ -33,6 +33,11 @@ function streamingApps() as object
     ]
 end function
 
+' Music apps for the Music tile. Check ids on your TV with: tools/tv.sh apps
+function musicApps() as object
+    return [["Spotify", "22297"], ["Pandora", "28"], ["iHeartRadio", "20197"], ["TuneIn", "1453"], ["Vevo", "20445"]]
+end function
+
 sub init()
     m.reg = CreateObject("roRegistrySection", "PureTV")
     m.prefs = {
@@ -44,6 +49,8 @@ sub init()
     m.focus = 0
     m.row = 0
     m.appIndex = 0
+    m.gridPage = ""
+    m.gridApps = []
     m.launcher = CreateObject("roSGNode", "Launcher")
 
     buildTiles()
@@ -214,15 +221,23 @@ sub showPage(kind as string)
         title = "Library"
         sub_ = "Only what you add. Nothing else."
         body = "No personal media added yet." + Chr(10) + Chr(10) + "Movies, Music and Photos will show here once you add your own files."
-    else if kind = "apps"
-        title = "TV apps"
+    else if kind = "apps" or kind = "music"
+        if kind = "music"
+            title = "Music"
+            m.gridApps = musicApps()
+        else
+            title = "TV apps"
+            m.gridApps = streamingApps()
+        end if
+        if m.gridPage <> kind then m.appIndex = 0
+        m.gridPage = kind
         sub_ = "Pick an app. Back on the remote returns here."
         hint = "OK  Open     •     Back  Return"
         buildAppGrid()
     else if kind = "help"
         title = "Help"
         sub_ = "How PureTV works"
-        body = "Open PureTV: Roku Home, then the PureTV tile." + Chr(10) + "Leave PureTV: press Home or Back on the remote." + Chr(10) + "Reinstall or remove: use the Roku developer page in Chrome on your Chromebook." + Chr(10) + "Streaming apps: open them from the Roku home."
+        body = "Open PureTV: Roku Home, then the PureTV tile." + Chr(10) + "Leave PureTV: press Home or Back on the remote." + Chr(10) + "Reinstall or remove: use the Roku developer page in Chrome on your Chromebook." + Chr(10) + "Streaming and music apps: open them from the TV apps and Music tiles."
     else
         title = "Settings"
         sub_ = "Make this television yours."
@@ -233,7 +248,7 @@ sub showPage(kind as string)
     m.top.findNode("pageTitle").text = title
     m.top.findNode("pageSub").text = sub_
     m.top.findNode("pageBody").text = body
-    m.top.findNode("pageBody").visible = (kind <> "settings" and kind <> "apps")
+    m.top.findNode("pageBody").visible = (kind = "library" or kind = "help")
     m.top.findNode("pageHint").text = hint
     updateTabs()
 end sub
@@ -306,7 +321,8 @@ end sub
 sub buildAppGrid()
     rows = m.top.findNode("rows")
     rows.removeChildrenIndex(rows.getChildCount(), 0)
-    apps = streamingApps()
+    apps = m.gridApps
+    fs = CreateObject("roFileSystem")
     for i = 0 to apps.Count() - 1
         g = rows.createChild("Group")
         g.translation = [352 * (i mod 5), 40 + 232 * Int(i / 5)]
@@ -322,15 +338,25 @@ sub buildAppGrid()
         face.width = 332
         face.height = 192
         if i = m.appIndex then face.blendColor = m.t.selected else face.blendColor = m.t.surface
-        lbl = rowLabel(apps[i][0], 28, m.t.text, "font:BoldSystemFontFile")
-        lbl.translation = [28, 76]
-        g.appendChild(lbl)
+        logo = "pkg:/images/app_" + apps[i][1] + ".png" ' made on the Chromebook by tools/tv.sh logos
+        if fs.Exists(logo)
+            pic = g.createChild("Poster")
+            pic.uri = logo
+            pic.width = 284
+            pic.height = 160
+            pic.translation = [24, 16]
+            pic.loadDisplayMode = "scaleToFit"
+        else
+            lbl = rowLabel(apps[i][0], 28, m.t.text, "font:BoldSystemFontFile")
+            lbl.translation = [28, 76]
+            g.appendChild(lbl)
+        end if
     end for
 end sub
 
 sub moveApp(delta as integer)
     nextIndex = m.appIndex + delta
-    if nextIndex < 0 or nextIndex >= streamingApps().Count() then return
+    if nextIndex < 0 or nextIndex >= m.gridApps.Count() then return
     if (delta = 1 or delta = -1) and Int(nextIndex / 5) <> Int(m.appIndex / 5) then return ' stay in the row
     m.appIndex = nextIndex
     buildAppGrid()
@@ -371,13 +397,13 @@ function onKeyEvent(key as string, press as boolean) as boolean
         end if
     end if
 
-    if m.page = "apps"
+    if m.page = "apps" or m.page = "music"
         moves = { left: -1, right: 1, up: -5, down: 5 }
         if moves.DoesExist(key)
             moveApp(moves[key])
             return true
         else if key = "OK"
-            m.launcher.appId = streamingApps()[m.appIndex][1]
+            m.launcher.appId = m.gridApps[m.appIndex][1]
             m.launcher.control = "STOP"
             m.launcher.control = "RUN"
             return true

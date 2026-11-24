@@ -7,6 +7,7 @@
 #   tools/tv.sh key Home|Back|Up|Down|Left|Right|Select|Play
 #   tools/tv.sh launch 12                 # open an app by id (12 = Netflix)
 #   tools/tv.sh apps                      # list installed apps and their ids
+#   tools/tv.sh logos                     # save app logos for the tiles, then run tools/build.sh
 set -euo pipefail
 : "${ROKU_IP:?set ROKU_IP to the TV IP address}"
 ecp="http://$ROKU_IP:8060"
@@ -18,5 +19,9 @@ case "${1:-}" in
   key)     curl -sS -X POST "$ecp/keypress/${2:?which key}" ;;
   launch)  curl -sS -X POST "$ecp/launch/${2:?app id}" ;;
   apps)    curl -sS "$ecp/query/apps" | sed -E 's#<app id="([0-9a-z_]+)"[^>]*>([^<]*)</app>#\1  \2#' | grep -v '^<' ;;
-  *)       sed -n '2,10p' "$0"; exit 1 ;;
+  logos)   dir="$(dirname "$0")/../roku/images"
+           for id in $(curl -sS "$ecp/query/apps" | grep -o 'app id="[0-9]*"' | grep -o '[0-9]*'); do
+             curl -sS -o "$dir/app_$id.png" "$ecp/query/icon/$id" && echo "saved app_$id.png"
+           done ;;
+  *)       sed -n '2,11p' "$0"; exit 1 ;;
 esac
